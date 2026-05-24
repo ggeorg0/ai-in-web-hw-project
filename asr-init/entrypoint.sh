@@ -4,6 +4,8 @@ set -e
 MODELS_DIR=${MODELS_DIR:-/models}
 TRITON_SCRIPTS_DIR=/opt/gigaam_repo/triton_scripts
 MODEL_TYPE=${MODEL_TYPE:-ctc}
+USER_UID=${USER_UID:-1000}
+USER_GID=${USER_GID:-1000}
 
 case $MODEL_TYPE in
   ctc)
@@ -38,7 +40,13 @@ echo "Converting v3_${MODEL_TYPE} model to ONNX FP16..."
 python3 run_convert_onnx.py "v3_${MODEL_TYPE}"
 
 echo "Converting ONNX to TensorRT..."
-sed 's/--memPoolSize=workspace:[0-9]*/--memPoolSize=workspace:3072/' run_convert_trt.sh | bash -s "$MODEL_TYPE"
+# Override script defaults on the fly via sed to keep GigaAM submodule unchanged:
+#   workspace 3072 MiB instead of 8192
+#   opt/max batch = 1 instead of 8/32
+sed -e 's/--memPoolSize=workspace:[0-9]*/--memPoolSize=workspace:3072/' \
+    -e 's/\(--\(opt\|max\)Shapes=[a-z_]*\):[0-9]*x/\1:1x/g' \
+    -e 's/\(,[a-z_]*\):[0-9]\+/\1:1/g' \
+    run_convert_trt.sh | bash -s "$MODEL_TYPE"
 
 echo "Copying Triton model repository to $MODELS_DIR..."
 mkdir -p "$MODELS_DIR"
@@ -48,5 +56,8 @@ done
 
 echo "Cleaning up generated artifacts from GigaAM repo..."
 find repos \( -name '*.onnx' -o -name '*.onnx.data' -o -name 'config.yaml' -o -name 'model.plan' \) -exec rm -f {} +
+
+echo "Fixing ownership of $MODELS_DIR to $USER_UID:$USER_GID..."
+chown -R "$USER_UID:$USER_GID" "$MODELS_DIR"
 
 echo "=== asr-init: Conversion completed successfully ==="
