@@ -1,6 +1,9 @@
 converted-models/
+data/
 .venv/
+backend/.venv/
 .git/
 __pycache__/
 *.pyc
 .env
+*.wav
