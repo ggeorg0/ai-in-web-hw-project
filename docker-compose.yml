@@ -1,3 +1,13 @@
+networks:
+  backend:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: "10.20.0.0/16"
+
+volumes:
+  postgres_data:
+
 services:
   asr-init:
     build:
@@ -11,6 +21,8 @@ services:
     environment:
       - MODEL_TYPE=ctc
       - PYTHONPATH=/opt/gigaam_repo
+      - USER_UID=${USER_UID:-1000}
+      - USER_GID=${USER_GID:-1000}
     deploy:
       resources:
         reservations:
@@ -18,6 +30,8 @@ services:
             - driver: nvidia
               count: 1
               capabilities: [gpu]
+    networks:
+      - backend
 
   triton:
     build:
@@ -36,6 +50,11 @@ services:
       - "8000:8000"
       - "8001:8001"
       - "8002:8002"
+    healthcheck:
+      test: ["CMD", "python3", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/v2/health/ready')"]
+      interval: 5s
+      timeout: 10s
+      retries: 30
     command: >
       tritonserver --model-repository=/models --exit-on-error=false
     deploy:
@@ -45,3 +64,109 @@ services:
             - driver: nvidia
               count: 1
               capabilities: [gpu]
+    networks:
+      - backend
+
+  vllm:
+    image: vllm/vllm-openai:latest
+    container_name: vllm
+    restart: on-failure
+    volumes:
+      - ~/.cache/huggingface:/root/.cache/huggingface
+    ports:
+      - "9000:8000"
+    healthcheck:
+      test: ["CMD", "python3", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/health')"]
+      interval: 10s
+      timeout: 10s
+      retries: 30
+    command:
+      - "--model"
+      - "Qwen/Qwen3-0.6B"
+      - "--max-model-len"
+      - "2048"
+      - "--gpu-memory-utilization"
+      - "0.7"
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: 1
+              capabilities: [gpu]
+    networks:
+      - backend
+
+  postgres:
+    image: postgres:16
+    container_name: postgres
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: grocery_helper
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 2s
+      timeout: 5s
+      retries: 10
+    networks:
+      - backend
+
+  redis:
+    image: redis:7-alpine
+    container_name: redis
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 2s
+      timeout: 5s
+      retries: 10
+    networks:
+      - backend
+
+  backend:
+    build:
+      context: .
+      dockerfile: backend/Dockerfile
+    container_name: backend
+    ports:
+      - "8080:8000"
+    volumes:
+      - ./data:/app/data
+    environment:
+      - DATABASE_URL=postgresql+asyncpg://postgres:postgres@postgres:5432/grocery_helper
+      - REDIS_URL=redis://redis:6379/0
+      - DATA_DIR=/app/data
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - backend
+
+  celery-worker:
+    build:
+      context: .
+      dockerfile: backend/Dockerfile.worker
+    container_name: celery-worker
+    volumes:
+      - ./data:/app/data
+    environment:
+      - DATABASE_URL=postgresql+asyncpg://postgres:postgres@postgres:5432/grocery_helper
+      - REDIS_URL=redis://redis:6379/0
+      - TRITON_GRPC_URL=triton:8001
+      - VLLM_URL=http://vllm:8000
+      - DATA_DIR=/app/data
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      triton:
+        condition: service_healthy
+      vllm:
+        condition: service_healthy
+    networks:
+      - backend
