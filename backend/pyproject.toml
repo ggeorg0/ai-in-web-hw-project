@@ -1,0 +1,29 @@
+[project]
+name = "grocery-helper-backend"
+version = "0.1.0"
+requires-python = ">=3.12"
+
+dependencies = [
+    "fastapi>=0.115",
+    "uvicorn[standard]>=0.34",
+    "sqlalchemy[asyncio]>=2.0",
+    "asyncpg>=0.30",
+    "alembic>=1.14",
+    "redis>=5.2",
+    "celery[redis]>=5.4",
+    "python-multipart>=0.0.20",
+    "prometheus-fastapi-instrumentator>=7.0",
+    "httpx>=0.28",
+    "numpy>=2.0",
+    "tritonclient[grpc]>=2.68",
+    "openai>=1.0",
+]
+
+[dependency-groups]
+dev = [
+    "pytest>=8.0",
+    "pytest-asyncio>=0.25",
+]
+
+[tool.pytest.ini_options]
+asyncio_mode = "auto"
