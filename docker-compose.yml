@@ -7,7 +7,7 @@ services:
     restart: "no"
     volumes:
       - ./converted-models:/models
-      - ./GigaAM:/opt/gigaam_repo:ro
+      - ./GigaAM:/opt/gigaam_repo
     environment:
       - MODEL_TYPE=ctc
       - PYTHONPATH=/opt/gigaam_repo
@@ -29,7 +29,7 @@ services:
         condition: service_completed_successfully
     volumes:
       - ./converted-models:/models
-      - ./GigaAM:/opt/gigaam_repo:ro
+      - ./GigaAM:/opt/gigaam_repo
     environment:
       - PYTHONPATH=/opt/gigaam_repo
     ports:
