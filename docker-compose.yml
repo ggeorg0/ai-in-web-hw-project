@@ -1,0 +1,47 @@
+services:
+  asr-init:
+    build:
+      context: .
+      dockerfile: asr-init/Dockerfile
+    container_name: asr-init
+    restart: "no"
+    volumes:
+      - ./converted-models:/models
+      - ./GigaAM:/opt/gigaam_repo:ro
+    environment:
+      - MODEL_TYPE=ctc
+      - PYTHONPATH=/opt/gigaam_repo
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: 1
+              capabilities: [gpu]
+
+  triton:
+    build:
+      context: .
+      dockerfile: triton/Dockerfile
+    container_name: triton
+    depends_on:
+      asr-init:
+        condition: service_completed_successfully
+    volumes:
+      - ./converted-models:/models
+      - ./GigaAM:/opt/gigaam_repo:ro
+    environment:
+      - PYTHONPATH=/opt/gigaam_repo
+    ports:
+      - "8000:8000"
+      - "8001:8001"
+      - "8002:8002"
+    command: >
+      tritonserver --model-repository=/models --exit-on-error=false
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: 1
+              capabilities: [gpu]
