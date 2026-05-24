@@ -1,9 +1,35 @@
+# Generated/volume data (mounted at runtime, not needed in build)
 converted-models/
 data/
+GigaAM/
+example_input/
+
+# Python virtual environments
 .venv/
 backend/.venv/
-.git/
+
+# Python bytecode/cache
 __pycache__/
 *.pyc
+*.pyo
+.pytest_cache/
+
+# Git
+.git/
+.gitignore
+.gitmodules
+
+# Env files
 .env
+
+# Audio files (fixtures)
 *.wav
+
+# Test/scripts not needed in builds
+test-gigaam-inference.py
+
+# Docs
+*.md
+
+# Docker
+.dockerignore
