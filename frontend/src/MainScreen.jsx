@@ -48,7 +48,7 @@ export default function MainScreen({ onLogout }) {
           }
         } catch {
           pollErrors++;
-          if (pollErrors < 3) {
+          if (pollErrors < 10) {
             setTimeout(poll, 1000);
           } else {
             setError("Ошибка проверки статуса");
