@@ -7,5 +7,8 @@ DATABASE_URL = os.getenv(
 )
 REDIS_URL = os.getenv("REDIS_URL", "redis://localhost:6379/0")
 TRITON_GRPC_URL = os.getenv("TRITON_GRPC_URL", "localhost:8001")
+TRITON_HTTP_URL = os.getenv("TRITON_HTTP_URL", "http://localhost:8000")
 VLLM_URL = os.getenv("VLLM_URL", "http://localhost:9000")
 DATA_DIR = os.getenv("DATA_DIR", os.path.join(PROJECT_ROOT, "data"))
+
+LOG_LEVEL = os.getenv("LOG_LEVEL", "INFO")

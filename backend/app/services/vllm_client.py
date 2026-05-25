@@ -40,16 +40,19 @@ async def call_vllm_extract(text: str) -> list[str]:
         api_key="not-needed",
     )
 
-    completion = await client.chat.completions.create(
-        model="Qwen/Qwen3-0.6B",
-        messages=[
-            {"role": "system", "content": PROMPT},
-            {"role": "user", "content": text},
-        ],
-        response_format=JSON_SCHEMA,
-        max_tokens=512,
-    )
+    try:
+        completion = await client.chat.completions.create(
+            model="Qwen/Qwen3-0.6B",
+            messages=[
+                {"role": "system", "content": PROMPT},
+                {"role": "user", "content": text},
+            ],
+            response_format=JSON_SCHEMA,
+            max_tokens=512,
+        )
 
-    content = completion.choices[0].message.content
-    result = json.loads(content)
-    return result.get("products", [])
+        content = completion.choices[0].message.content
+        result = json.loads(content)
+        return result.get("products", [])
+    finally:
+        await client.close()
