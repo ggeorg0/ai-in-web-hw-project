@@ -15,6 +15,7 @@ dependencies = [
     "prometheus-fastapi-instrumentator>=7.0",
     "httpx>=0.28",
     "numpy>=2.0",
+    "pydub>=0.25",
     "tritonclient[grpc]>=2.68",
     "openai>=1.0",
 ]
