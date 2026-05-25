@@ -16,6 +16,7 @@ async def test_call_triton_asr_returns_decoded_text():
 
     mock_client = MagicMock()
     mock_client.infer = AsyncMock(return_value=mock_response)
+    mock_client.close = AsyncMock()
 
     with patch(
         "app.services.triton_client.grpcclient.InferenceServerClient",
@@ -44,6 +45,7 @@ async def test_call_triton_asr_returns_empty_on_no_texts():
 
     mock_client = MagicMock()
     mock_client.infer = AsyncMock(return_value=mock_response)
+    mock_client.close = AsyncMock()
 
     with patch(
         "app.services.triton_client.grpcclient.InferenceServerClient",
@@ -60,6 +62,7 @@ async def test_call_triton_asr_creates_client_with_configured_url():
     mock_response = MagicMock()
     mock_response.as_numpy.return_value = np.array([b"test"], dtype=object)
     mock_instance.infer = AsyncMock(return_value=mock_response)
+    mock_instance.close = AsyncMock()
     mock_client_class.return_value = mock_instance
 
     with patch(

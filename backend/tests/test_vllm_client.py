@@ -20,6 +20,7 @@ async def test_call_vllm_extract_returns_products():
     mock_client.chat = MagicMock()
     mock_client.chat.completions = MagicMock()
     mock_client.chat.completions.create = AsyncMock(return_value=fake_response)
+    mock_client.close = AsyncMock()
 
     with patch(
         "app.services.vllm_client.AsyncOpenAI", return_value=mock_client
@@ -49,6 +50,7 @@ async def test_call_vllm_extract_empty_products():
 
     mock_client = MagicMock()
     mock_client.chat.completions.create = AsyncMock(return_value=fake_response)
+    mock_client.close = AsyncMock()
 
     with patch(
         "app.services.vllm_client.AsyncOpenAI", return_value=mock_client
